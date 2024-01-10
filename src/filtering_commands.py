@@ -38,7 +38,7 @@ filtered_no_duplicates = filtered[~mask_duplicated] # Created a DataFrame withou
 filtered_no_duplicates.to_csv ("filtered_no_dups.csv")
 
 #matched ModelID to CellLineName from depmap database to my list**
-model = pd.read_csv('/Users/meggielam/Desktop/test/Model.csv')
+model = pd.read_csv('../data/Model.csv', sep=',', index_col=0)
 filtered_no_dups = pd.read_csv('/Users/meggielam/Desktop/test/filtered_no_dups.csv')
 merged_df = pd.merge(filtered_no_dups, model[['ModelID', 'CellLineName']], how='left', on='ModelID')
 
