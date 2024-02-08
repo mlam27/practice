@@ -1,6 +1,6 @@
 import pysam
-import pandas
-import numpy
+import pandas as pd
+import numpy as np
 
 input_bam = "/Users/meggielam/Desktop/test/SC-1_1_SC-1_2.hg38plusAkata_inverted-Aligned.sortedByCoord.out.bam"
 
@@ -20,7 +20,10 @@ def get_var(path_to_bamfile, variant_chromosome, variant_position):
             base_counts[base] += 1
     return base_counts
 
-df = pd.read_csv("/Users/meggielam/Desktop/test/filtered_final_2.csv", usecols = ["Chrom", "Start"])
+df = pd.read_csv("/Users/meggielam/Desktop/test/filtered_final_2.csv")
+df = df[df['Chrom']!= 'chrM']
+df.index=range(len(df.index))
+
 rows = len(df.index)
 columns = 4 
 m = np.zeros([rows,columns])
@@ -28,7 +31,7 @@ m = np.zeros([rows,columns])
 i = 0 
 
 for chrom, start in zip(df['Chrom'], df['Start']):
-    base_counts = get_var(bam, chrom, start)
+    base_counts = get_var(input_bam, chrom, start)
     A = base_counts['A']
     C = base_counts['C']
     G = base_counts['G']
@@ -39,11 +42,23 @@ for chrom, start in zip(df['Chrom'], df['Start']):
     m[i, 3] = T
 
     i = i + 1
-    if i == 1000:
-        break 
 
-#this will tell me what is at row 50 -- m[50, :]
-pd.DataFrame(m, columns=['A','C','G', 'T'])
+
+minimum_reads = 30
+md = pd.DataFrame(m, columns=['A','C','G', 'T']) #this will tell me what is at row 50 -- m[50, :]
+md["Ref"] = list(df.Ref) #for each row want to see what the base was suppose to be before the mutation
+md['called_nuc'] = [md.columns[i] for i in np.argmax(m,1)]  # Get most freq base
+md['CellLineName']=df['CellLineName']
+md['expected_alt'] = df['Alt']
+
+md = md[np.sum(md[md.columns[:4]],1) > minimum_reads]
+t_f = []
+for ref, called_nuc in zip(md['Ref'], md['called_nuc']):
+    t_f.append(ref == called_nuc)
+md['match']=t_f
+md['alt_match']=md['called_nuc'] == md['expected_alt']
+md[(~md['match']) & (md['alt_match'])& (md['Ref'].str.len() ==1)]['CellLineName'].value_counts()
+
 
 
 
