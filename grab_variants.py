@@ -30,8 +30,19 @@ m = np.zeros([rows,columns])
 
 i = 0 
 
-for chrom, start in zip(df['Chrom'], df['Start']):
+for chrom, start, alt,cline in zip(df['Chrom'], df['Start'], df['Alt'],df['CellLineName']):
     base_counts = get_var(input_bam, chrom, start)
+    called_base = max(base_counts, key=base_counts.get)
+    depth = sum(val for val in base_counts.values())
+    max_base = base_counts[called_base]
+    if depth < 100:
+        continue
+    elif max_base / depth < .8:
+        continue
+   
+    elif alt == called_base :
+        print(cline)
+
     A = base_counts['A']
     C = base_counts['C']
     G = base_counts['G']
